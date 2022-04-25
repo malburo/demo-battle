@@ -5,5 +5,8 @@ export interface Skill {
   cooldown: number;
   rangeAttack: number;
   attackImageUrl: string;
-  transform: string;
+  transform: {
+    left: string;
+    right: string;
+  };
 }

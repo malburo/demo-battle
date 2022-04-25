@@ -1,7 +1,7 @@
 import { Skill, User } from '@/models';
 import { ArrowBackIcon, ArrowForwardIcon } from '@chakra-ui/icons';
 import { Box, Button, Container, Flex, Progress, Text } from '@chakra-ui/react';
-import { motion, Variants } from 'framer-motion';
+import { motion, useAnimation, Variants } from 'framer-motion';
 import type { NextPage } from 'next';
 import { useEffect, useState } from 'react';
 
@@ -13,7 +13,10 @@ const skills: Skill[] = [
     cooldown: 4000,
     rangeAttack: 400,
     attackImageUrl: '/knife.png',
-    transform: 'rotate(240deg)',
+    transform: {
+      left: 'rotate(240deg)',
+      right: 'rotate(-240deg)',
+    },
   },
   {
     id: '2',
@@ -22,7 +25,10 @@ const skills: Skill[] = [
     cooldown: 2000,
     rangeAttack: 100,
     attackImageUrl: '/hammer.png',
-    transform: 'rotate(20deg)',
+    transform: {
+      left: 'rotate(20deg)',
+      right: 'rotate(-20deg)',
+    },
   },
 ];
 
@@ -58,6 +64,14 @@ const Home: NextPage = () => {
   const [posBackground, setPosBackground] = useState<number>(0);
   const [posA, setPosA] = useState<number>(300);
   const [posB, setPosB] = useState<number>(800);
+  const animation = useAnimation();
+
+  async function sequence() {
+    await animation.start({ rotate: -90 });
+    await animation.start({ scale: 1.5 });
+    await animation.start({ rotate: 0 });
+    animation.start({ scale: 1 });
+  }
 
   useEffect(() => {
     const skillIntervalId = setInterval(function () {
@@ -128,7 +142,9 @@ const Home: NextPage = () => {
     setSkillCooldown(skill.cooldown);
   };
 
-  const handleAttackComplete = (skill: Skill) => {
+  const handleAttackComplete = async (skill: Skill) => {
+    await animation.start({ scale: 1.5 });
+    animation.start({ scale: 1 });
     setUserB((prev) => ({ ...userB, health: prev.health - skill.damage > 0 ? prev.health - skill.damage : 0 }));
     setShowAttackAnimation(false);
   };
@@ -177,15 +193,20 @@ const Home: NextPage = () => {
               <Progress hasStripe value={userB.health} marginY={2} colorScheme="pink" borderRadius={4} />
             </Box>
             <Box w="100px" transform={posB - posA < 0 ? 'scaleX(-1)' : 'none'}>
-              <img src="/B.png" alt="" width="100%" height="auto" />
+              <motion.div animate={animation}>
+                <img src="/B.png" alt="" width="100%" height="auto" />
+              </motion.div>
             </Box>
           </Box>
 
           {currentSkill && showAttackAnimation && (
             <motion.div
-              style={{ position: 'absolute' }}
+              style={{ position: 'absolute', transform: 'scaleX(1)' }}
               variants={variants}
-              custom={{ pos: posB - 50, transform: currentSkill.transform }}
+              custom={{
+                pos: posB - posA > 0 ? posB - 50 : posB + 50,
+                transform: posB - posA > 0 ? currentSkill.transform.left : currentSkill.transform.right,
+              }}
               initial={{ left: posA + 50, bottom: 100, opacity: 0 }}
               animate={showAttackAnimation && 'attack'}
               onAnimationComplete={() => handleAttackComplete(currentSkill)}
